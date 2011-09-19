@@ -39,7 +39,7 @@ class AllOutAttackDetermined extends AllOutAttack {
 class AllOutAttackDouble extends AllOutAttack {
   override def attack(attacker: Fighter, defender: Fighter) = {
     for(i <- 0 until 2)
-      if (attacker.attack())
+      if (attacker.attack(-4*i))
           if (!defender.maneuver.defend(attacker, defender))
             defender.receiveDamage(attacker.doDamage())
   } }
@@ -61,6 +61,19 @@ class AllOutDefenseIncreased extends Maneuver {
 }
 
 class AllOutDefenseDouble extends AllOutDefense {
-  override def defend(attacker: Fighter, defender: Fighter) = defender.defend()
+  override def defend(attacker: Fighter, defender: Fighter) = {
+    if (defender.parryScore >= defender.dodgeScore) {
+      if( defender.parry() )
+        true
+      else
+        defender.dodge()
+    }
+    else {
+      if (defender.dodge())
+        true
+      else
+        defender.parry()
+    }
+  }
 }
 
