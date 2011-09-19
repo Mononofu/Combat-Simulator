@@ -18,6 +18,8 @@ class Piercing extends DamageType(1.0) {}
 
 class LargePiercing extends DamageType(1.5) {}
 
+class HugePiercing extends DamageType(2.0) {}
+
 class Impaling extends DamageType(2.0) {}
 
 class Cutting extends DamageType(1.5) {}

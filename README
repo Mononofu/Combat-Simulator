@@ -1,0 +1,8 @@
+How to install
+
+just clone it from GitHub and execute sbt in the top directory. Then, type "update", enter, "run", enter.
+If it doesn't work, tell me so I can fix it.
+
+What does it do?
+Basically, you specify two fighters using GURPS rules and this tool lets them fight against each other a few thousand times. Then, it displays average survival stats.
+

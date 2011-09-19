@@ -12,3 +12,6 @@ abstract class HitLocation {
   def calcDamage(dmg: Int) = dmg
 }
 
+class Skull extends HitLocation {
+  override def calcDamage(dmg: Int) = (dmg - 2) * 4
+}
