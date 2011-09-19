@@ -28,6 +28,7 @@ class WorkMaster(
   var results = List[List[Double]]()
 
 
+  // akka code from online documentation
   // create the workers
   val workers = Vector.fill(nrOfWorkers)(actorOf[CombatSimulator].start())
 

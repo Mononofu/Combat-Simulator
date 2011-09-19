@@ -17,6 +17,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodge: Int,
   var shockPenalties = 0
 
   def attack() = {
+    // TODO: add hitlocations
     val roll = DefaultDice.roll()
     if (roll <= (weaponSkill - shockPenalties)) {
       log("%d < %d => hit".format(roll, (weaponSkill - shockPenalties)))
@@ -28,6 +29,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodge: Int,
   }
 
   def doDamage() = {
+    // TODO: incorporate damage type (imp, pi++, etc)
     val dmg = damage.roll()
     log("%d dmg".format(dmg))
     dmg
@@ -101,6 +103,9 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodge: Int,
 
     }
 
+
+    //actually apply the damage to the HP
+    // TODO: take different damage types into account
     curHP -= dmg
 
     // only affect DX- and IQ-based skills, but not defenses
