@@ -8,8 +8,10 @@ package CombatSim.DamageType
  * To change this template use File | Settings | File Templates.
  */
 
+case class Damage(baseDamage: Int, multiplier: Double)
+
 abstract class DamageType(mul: Double) {
-  def calcDamage(dmg: Int) = if(dmg >= 1) math.max((dmg * mul).toInt, 1) else 0
+  def calcDamage(dmg: Damage) = if(mul > dmg.multiplier) (dmg.baseDamage, mul) else dmg
 }
 
 class SmallPiercing extends DamageType(0.5) {}

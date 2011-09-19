@@ -10,9 +10,10 @@ package CombatSim.Fighter
 
 import CombatSim.Tools._
 import CombatSim.Maneuver._
+import CombatSim.DamageType._
 
 case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
-  val parryScore          = 3 + weaponSkill / 2
+  val parryScore     = 3 + weaponSkill / 2
   var dead           = false
   var curHP          = HP
   var shockPenalties = 0
@@ -38,7 +39,9 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     // TODO: incorporate damage type (imp, pi++, etc)
     val dmg = damage.roll() + mod
     log("%d dmg".format(dmg))
-    dmg
+
+    // this is (actual damage, multiplier for damage type / hit location)
+    Damage(dmg, 1.)
   }
 
   def parry(mod: Int = 0) = {
@@ -90,42 +93,46 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     //println("%4s: %s".format(name, str))
   }
 
-  def receiveDamage(dmg: Int) {
-    if (dmg > HP / 2) {
-      log("major wound")
-      if (!DefaultDice.check(HT)) {
-        log("HT check failed")
-        dead = true
+  def receiveDamage(damage: Damage) {
+    if (damage.baseDamage >= 1) {
+      val injury = math.max(damage.baseDamage * damage.multiplier, 1).toInt
+      
+      if (injury > HP / 2) {
+        log("major wound")
+        if (!DefaultDice.check(HT)) {
+          log("HT check failed")
+          dead = true
+        }
+        else {
+          log("HT check succeeded")
+        }
+      }
+
+      // crossing HP treshold because of damage?
+      // TODO: do something about crossing multiple thresholds at once
+      if ((curHP - injury) < 0 && curHP / HP != (curHP - injury) / HP) {
+        if (DefaultDice.check(HT)) {
+          log("HT check succeeded")
+        }
+        else {
+          log("HT check failed")
+          dead = true
+        }
+
+      }
+
+
+      //actually apply the damage to the HP
+      // TODO: take different damage types into account
+      curHP -= injury
+
+      // only affect DX- and IQ-based skills, but not defenses
+      if (HP >= 20) {
+        shockPenalties = math.max(math.min(injury / (HP / 10), 4), shockPenalties)
       }
       else {
-        log("HT check succeeded")
+        shockPenalties = math.max(math.min(injury, 4), shockPenalties)
       }
-    }
-
-    // crossing HP treshold because of damage?
-    // TODO: do something about crossing multiple thresholds at once
-    if ((curHP - dmg) < 0 && curHP / HP != (curHP - dmg) / HP) {
-      if (DefaultDice.check(HT)) {
-        log("HT check succeeded")
-      }
-      else {
-        log("HT check failed")
-        dead = true
-      }
-
-    }
-
-
-    //actually apply the damage to the HP
-    // TODO: take different damage types into account
-    curHP -= dmg
-
-    // only affect DX- and IQ-based skills, but not defenses
-    if (HP >= 20) {
-      shockPenalties = math.max(math.min(dmg / (HP / 10), 4), shockPenalties)
-    }
-    else {
-      shockPenalties = math.max(math.min(dmg, 4), shockPenalties)
     }
   }
 

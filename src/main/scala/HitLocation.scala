@@ -8,10 +8,13 @@ package CombatSim.HitLocation
  * To change this template use File | Settings | File Templates.
  */
 
+import CombatSim.DamageType.Damage
+
 abstract class HitLocation {
-  def calcDamage(dmg: Int) = dmg
+  // dmg is (actual damage value, injury multiplier)
+  def calcDamage(dmg: Damage) = dmg
 }
 
 class Skull extends HitLocation {
-  override def calcDamage(dmg: Int) = (dmg - 2) * 4
+  override def calcDamage(dmg: Damage) = Damage(dmg.baseDamage - 2, 4)
 }
