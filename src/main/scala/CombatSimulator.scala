@@ -63,7 +63,7 @@ class CombatSimulator extends Actor {
         round += 1
       }
 
-      // tell the fighter that a new turn just begun, so certain events can take place
+      // tell the fighter that his turn just began, so certain events can take place
       // like HT rolls for <0 HP
       fighters(i).startTurn()
 
@@ -76,6 +76,9 @@ class CombatSimulator extends Actor {
         {
           fighters((i + 1) % numF).receiveDamage(fighters(i).doDamage())
         }
+
+      // tell the player that the his turn just ended, so effects like shock
+      // penalties can be removed
       fighters(i).endTurn()
 
       // increment counter to next fighter

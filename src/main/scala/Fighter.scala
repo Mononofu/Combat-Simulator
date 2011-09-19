@@ -9,51 +9,63 @@ package CombatSim.Fighter
  */
 
 import CombatSim.Tools._
+import CombatSim.Maneuver._
 
-case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodge: Int, BS: Double, name: String) {
-  val parry          = 3 + weaponSkill / 2
+case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
+  val parryScore          = 3 + weaponSkill / 2
   var dead           = false
   var curHP          = HP
   var shockPenalties = 0
+  var maneuver       = new Attack
 
-  def attack() = {
+  def attack(mod: Int = 0) = {
     // TODO: add hitlocations
     val roll = DefaultDice.roll()
-    if (roll <= (weaponSkill - shockPenalties)) {
-      log("%d < %d => hit".format(roll, (weaponSkill - shockPenalties)))
+    if (roll <= (weaponSkill - shockPenalties + mod)) {
+      log("%d < %d => hit".format(roll, (weaponSkill - shockPenalties + mod)))
       true
     } else {
-      log("%d > %d => miss".format(roll, (weaponSkill - shockPenalties)))
+      log("%d > %d => miss".format(roll, (weaponSkill - shockPenalties + mod)))
       false
     }
   }
 
-  def doDamage() = {
+  def chooseManeuver() = {
+
+  }
+
+  def doDamage(mod: Int = 0) = {
     // TODO: incorporate damage type (imp, pi++, etc)
-    val dmg = damage.roll()
+    val dmg = damage.roll() + mod
     log("%d dmg".format(dmg))
     dmg
   }
 
-  def defend() = {
-    if (parry >= dodge) {
-      if (DefaultDice.check(parry)) {
-        log("parried")
-        true
-      }
-      else {
-        false
-      }
+  def parry(mod: Int = 0) = {
+    if (DefaultDice.check(parryScore + mod)) {
+      log("parried")
+      true
     }
     else {
-      if (DefaultDice.check(dodge)) {
-        log("dodged")
-        true
-      }
-      else {
-        false
-      }
+      false
     }
+  }
+
+  def dodge(mod: Int = 0) = {
+    if (DefaultDice.check(dodgeScore + mod)) {
+      log("dodged")
+      true
+    }
+    else {
+      false
+    }
+  }
+
+  def defend(mod: Int = 0) = {
+    if (parryScore >= dodgeScore)
+      parry(mod)
+    else
+      dodge(mod)
   }
 
   def startTurn() {
