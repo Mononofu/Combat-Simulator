@@ -10,8 +10,12 @@ package CombatSim.Maneuver
 
 import CombatSim.Fighter.Fighter
 
+case class BaseAttack(hitMod: Int = 0, dmgMod: Int = 0)
+
 abstract class Maneuver {
-  def attack(attacker: Fighter, defender: Fighter, attackType: CombatSim.Attack.Attack) = attackType.attack(attacker, defender)
+  // return number of attacks with modifiers for each
+  def attack(attacker: Fighter) = List(BaseAttack())
+
   def defend(attacker: Fighter, defender: Fighter, mod: Int = 0) = defender.defend(mod)
 }
 
@@ -22,22 +26,19 @@ abstract class AllOutAttack extends Maneuver {
 }
 
 class AllOutAttackDetermined extends AllOutAttack {
-  override def attack(attacker: Fighter, defender: Fighter, attackType: CombatSim.Attack.Attack) = attackType.attack(attacker, defender, +4)
+  override def attack(attacker: Fighter) = List(BaseAttack(+4, +0))
 }
 
 class AllOutAttackDouble extends AllOutAttack {
-  override def attack(attacker: Fighter, defender: Fighter, attackType: CombatSim.Attack.Attack) = {
-    for(i <- 0 until 2)
-      attackType.attack(attacker, defender, -4*i)
-  }
+  override def attack(attacker: Fighter) = List(BaseAttack(), BaseAttack())
 }
 
 class AllOutAttackStrong extends AllOutAttack {
-  override def attack(attacker: Fighter, defender: Fighter, attackType: CombatSim.Attack.Attack) = attackType.attack(attacker, defender, 0, math.max(2, attacker.damage.numDice))
+  override def attack(attacker: Fighter) = List(BaseAttack(+0, math.max(2, attacker.damage.numDice)))
 }
 
 abstract class AllOutDefense extends Maneuver {
-  override def attack(attacker: Fighter, defender: Fighter, attackType: CombatSim.Attack.Attack) = false
+  override def attack(attacker: Fighter) = List()
 }
 
 class AllOutDefenseIncreased extends Maneuver {

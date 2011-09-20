@@ -11,6 +11,8 @@ package CombatSim.Fighter
 import CombatSim.Tools._
 import CombatSim.Maneuver._
 import CombatSim.DamageType._
+import CombatSim.Attack._
+import CombatSim.HitLocation._
 
 case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
   val parryScore     = 3 + weaponSkill / 2
@@ -31,8 +33,15 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     }
   }
 
+  // select one of the maneuvers from CombatSim.Maneuver
   def chooseManeuver() = {
+    new Attack
+  }
 
+  // input is a list of available attacks this turn, each with the relevant mods
+  // return a list of the chosen attacks from CombatSim.Attack
+  def chooseAttacks(availableAttacks: List[BaseAttack]) = {
+    for(attackMods <- availableAttacks) yield new BasicAttack(attackMods, new Untargeted)
   }
 
   def doDamage(mod: Int = 0) = {

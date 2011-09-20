@@ -15,6 +15,8 @@ abstract class HitLocation {
   def calcDamage(dmg: Damage) = dmg
 }
 
+class Untargeted extends HitLocation {}
+
 class Skull extends HitLocation {
   override def calcDamage(dmg: Damage) = Damage(dmg.baseDamage - 2, 4)
 }

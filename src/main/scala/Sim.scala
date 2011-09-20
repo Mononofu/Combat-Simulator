@@ -11,7 +11,7 @@ object Interface extends App {
     val latch = new CountDownLatch(1)
 
     // create the master
-    val master = actorOf(new WorkMaster(8, 24, 96000, latch)).start()
+    val master = actorOf(new WorkMaster(8, 24, 9600, latch)).start()
 
     // start the calculation
     master ! Simulate
