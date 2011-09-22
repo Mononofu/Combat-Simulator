@@ -20,10 +20,14 @@ sealed trait ModifierType
 case object ShockPenalties extends ModifierType
 
 
+sealed trait ModifierTarget
+
+case object HitPenalty extends ModifierTarget
+
 
 //
 // TODO: extend this to general modifiers using HashMap
-case class Modifier(var hitPenalty: Int, var duration: Int)
+case class Modifier(target: ModifierTarget, var value: Int, var duration: Int)
 
 case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
   val parryScore     = 3 + weaponSkill / 2
@@ -34,7 +38,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   val AI = new CombatSim.AI.AI
   var temporaryModifiers = new collection.mutable.HashMap[ModifierType, Modifier]()
 
-  def attack(mod: Int = 0) = DefaultDice.roll() <= (weaponSkill - (temporaryModifiers.foldLeft(0)((sum, mod) => sum + mod._2.hitPenalty)) + mod)
+  def attack(mod: Int = 0) = DefaultDice.roll() <= (weaponSkill - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
 
   def chooseManeuver() = AI.chooseManeuver()
 
@@ -143,8 +147,8 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
         shockPenalties = math.max(math.min(injury, 4), shockPenalties)
       }
       
-      temporaryModifiers.getOrElseUpdate(ShockPenalties, Modifier(shockPenalties, 1)) match {
-        case mod => if (mod.hitPenalty < shockPenalties) temporaryModifiers.update(ShockPenalties, Modifier(shockPenalties, 1))
+      temporaryModifiers.getOrElseUpdate(ShockPenalties, Modifier(HitPenalty, shockPenalties, 1)) match {
+        case mod => if (mod.value < shockPenalties) temporaryModifiers.update(ShockPenalties, Modifier(HitPenalty, shockPenalties, 1))
       }
 
     }
