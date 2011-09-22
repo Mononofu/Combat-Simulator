@@ -8,21 +8,23 @@ package CombatSim.DamageType
  * To change this template use File | Settings | File Templates.
  */
 
-case class Damage(baseDamage: Int, multiplier: Double)
-
-abstract class DamageType(mul: Double) {
-  def calcDamage(dmg: Damage) = if(mul > dmg.multiplier) (dmg.baseDamage, mul) else dmg
+case class Damage(baseDamage: Int, multiplier: Double) {
+  def resolve() = (baseDamage * multiplier).toInt
 }
 
-class SmallPiercing extends DamageType(0.5) {}
+abstract class  DamageType(mul: Double) {
+  def calcDamage(dmg: Damage) = if(mul > dmg.multiplier) Damage(dmg.baseDamage, mul) else dmg
+}
 
-class Piercing extends DamageType(1.0) {}
+object SmallPiercing extends DamageType(0.5) {}
 
-class LargePiercing extends DamageType(1.5) {}
+object Piercing extends DamageType(1.0) {}
 
-class HugePiercing extends DamageType(2.0) {}
+object LargePiercing extends DamageType(1.5) {}
 
-class Impaling extends DamageType(2.0) {}
+object HugePiercing extends DamageType(2.0) {}
 
-class Cutting extends DamageType(1.5) {}
+object Impaling extends DamageType(2.0) {}
+
+object Cutting extends DamageType(1.5) {}
 
