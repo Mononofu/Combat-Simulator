@@ -15,13 +15,27 @@ case class AttackModifiers(hitMod: Int = 0, dmgMod: Int = 0)
 
 class BasicAttack(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation = new Untargeted, defendMod: Int = 0) {
   def attack(attacker: Fighter, defender: Fighter) = {
-    if (attacker.attack(mods.hitMod))
-      if (!defender.maneuver.defend(attacker, defender, defendMod)) {
-        // now we now that we hit and the defender failed his defenses
-        // let's calculate the damage done by the attacker
+    import CombatSim.Tools.ResultType._
+    attacker.attack(mods.hitMod) match {
+      case CriticalSuccess =>
+        // no defense possible
+        // TODO: critical hit table here
         val dmg = attacker.doDamage(mods.dmgMod)
         defender.receiveDamage(hitloc.calcDamage(dmg))
+
+      case Success => defender.maneuver.defend(attacker, defender, defendMod) match {
+        case CriticalFailure | Failure =>
+          val dmg = attacker.doDamage(mods.dmgMod)
+          defender.receiveDamage(hitloc.calcDamage(dmg))
+        case _ =>
       }
+
+      case CriticalFailure =>
+        // TODO: put critical miss table here
+
+      case _ =>
+        // miss, nothing happens
+    }
   }
 }
 

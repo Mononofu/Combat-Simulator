@@ -9,6 +9,7 @@ package CombatSim.Fighter
  */
 
 import CombatSim.Tools._
+import ResultType._
 import CombatSim.Maneuver._
 import CombatSim.Attack._
 import CombatSim.DamageType._
@@ -25,8 +26,11 @@ sealed trait ModifierTarget
 case object HitPenalty extends ModifierTarget
 
 
-//
-// TODO: extend this to general modifiers using HashMap
+// our modifier has three parts:
+// 1) the target, ie what value is affected, eg DX or hit penalties
+// 2) the actual value of the modifier
+// 3) how many turns it should last, counter is always decremented at the end
+//    of each turn. if it reaches 0, the modifier is discarded. 
 case class Modifier(target: ModifierTarget, var value: Int, var duration: Int)
 
 case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
@@ -38,7 +42,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   val AI = new CombatSim.AI.AI
   var temporaryModifiers = new collection.mutable.HashMap[ModifierType, Modifier]()
 
-  def attack(mod: Int = 0) = DefaultDice.roll() <= (weaponSkill - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
+  def attack(mod: Int = 0) = DefaultDice.check(weaponSkill - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
 
   def chooseManeuver() = AI.chooseManeuver()
 
@@ -46,31 +50,14 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
 
   def doDamage(mod: Int = 0) = {
     val dmg = damage.roll() + mod
-    log("%d dmg".format(dmg))
 
     // this returns a case class: Damage(actual damage, multiplier for damage type / hit location)
     Cutting.calcDamage(Damage(dmg, 1.))
   }
 
-  def parry(mod: Int = 0) = {
-    if (DefaultDice.check(parryScore + mod)) {
-      log("parried")
-      true
-    }
-    else {
-      false
-    }
-  }
+  def parry(mod: Int = 0) = DefaultDice.check(parryScore + mod)
 
-  def dodge(mod: Int = 0) = {
-    if (DefaultDice.check(dodgeScore + mod)) {
-      log("dodged")
-      true
-    }
-    else {
-      false
-    }
-  }
+  def dodge(mod: Int = 0) = DefaultDice.check(dodgeScore + mod)
 
   def defend(mod: Int = 0) = {
     if (parryScore >= dodgeScore)
@@ -82,14 +69,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   def startTurn() {
     if (curHP < 0) {
       // need to make HT check every turn now
-      log("HT check at start of round")
-      if (!DefaultDice.check(HT - (curHP.abs / HP))) {
-        dead = true
-        log("failed")
-      }
-      else {
-        log("succeeded")
-      }
+      HTCheck(- (curHP.abs / HP))
     }
   }
 
@@ -101,39 +81,22 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     temporaryModifiers = temporaryModifiers.filter(_._2.duration > 0)
   }
 
-  def log(str: String) {
-    //println("%4s: %s".format(name, str))
-  }
+
+  def HTCheck(mod: Int = 0) = DefaultDice.check(HT) match {
+          case Failure | CriticalFailure => dead = true
+          case _ =>
+        }
 
   def receiveDamage(damage: Damage) {
     if (damage.baseDamage >= 1) {
       // TODO: take hitlocation specific DR into account
       val injury = math.max((damage.baseDamage - DR) * damage.multiplier, 1).toInt
       
-      if (injury > HP / 2) {
-        log("major wound")
-        if (!DefaultDice.check(HT)) {
-          log("HT check failed")
-          dead = true
-        }
-        else {
-          log("HT check succeeded")
-        }
-      }
+      if (injury > HP / 2) HTCheck()
 
       // crossing HP treshold because of damage?
       // TODO: do something about crossing multiple thresholds at once
-      if ((curHP - injury) < 0 && curHP / HP != (curHP - injury) / HP) {
-        if (DefaultDice.check(HT)) {
-          log("HT check succeeded")
-        }
-        else {
-          log("HT check failed")
-          dead = true
-        }
-
-      }
-
+      if ((curHP - injury) < 0 && curHP / HP != (curHP - injury) / HP) HTCheck()
 
       //actually apply the damage to the HP
       curHP -= injury
@@ -161,5 +124,6 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   def reset() {
     curHP = HP
     dead = false
+    temporaryModifiers.clear()
   }
 }

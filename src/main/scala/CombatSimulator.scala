@@ -50,16 +50,6 @@ class CombatSimulator extends Actor {
     while (fighters.filter(_.alive).length > 1) {
       // if it's fighter 0's turn, we probably just begun a new turn
       if (i == 0) {
-        log()
-        // let's display HP for each fighter
-        // actually, this will appear as belonging to the previous round
-        for (player <- fighters) {
-          player.log("%d HP  ".format(player.curHP))
-        }
-        log()
-
-        // banner to start new round
-        log("******* round %2d *******".format(round))
         round += 1
       }
 

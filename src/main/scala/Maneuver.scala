@@ -10,6 +10,7 @@ package CombatSim.Maneuver
 
 import CombatSim.Fighter.Fighter
 import CombatSim.Attack.AttackModifiers
+import CombatSim.Tools.ResultType._
 
 abstract class Maneuver {
   // return number of attacks with modifiers for each
@@ -21,7 +22,7 @@ abstract class Maneuver {
 class Attack extends Maneuver {}
 
 abstract class AllOutAttack extends Maneuver {
-  override def defend(attacker: Fighter, defender: Fighter, mod: Int = 0) = false
+  override def defend(attacker: Fighter, defender: Fighter, mod: Int = 0) = Failure
 }
 
 class AllOutAttackDetermined extends AllOutAttack {
@@ -47,16 +48,17 @@ class AllOutDefenseIncreased extends Maneuver {
 class AllOutDefenseDouble extends AllOutDefense {
   override def defend(attacker: Fighter, defender: Fighter, mod: Int = 0) = {
     if (defender.parryScore >= defender.dodgeScore) {
-      if( defender.parry(mod) )
-        true
-      else
-        defender.dodge(mod)
+      defender.parry(mod) match {
+        // if our parry simply fails, we can try again
+        case Failure => defender.dodge(mod)
+        case result => result
+      }
     }
     else {
-      if (defender.dodge(mod))
-        true
-      else
-        defender.parry(mod)
+      defender.dodge(mod)match {
+        case Failure => defender.parry(mod)
+        case result => result
+      }
     }
   }
 }
