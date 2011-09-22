@@ -8,7 +8,7 @@ package CombatSim.Attack
  * To change this template use File | Settings | File Templates.
  */
 
-import CombatSim.Fighter.Fighter
+import CombatSim.Fighter._
 import CombatSim.HitLocation._
 
 case class AttackModifiers(hitMod: Int = 0, dmgMod: Int = 0)
@@ -48,11 +48,22 @@ class TelegraphicAttack(mods: AttackModifiers = AttackModifiers(), hitloc: HitLo
 
 class Feint(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation = new Untargeted) {
   def attack(attacker: Fighter, defender: Fighter) = {
-    // TODO: add code for the feint here
-    // should penalties should be represented in a fighter as a tuple: (penalty, turns remaining)
-    // which is updated at the end of each round and then removed if turns <= 0
+
+    import CombatSim.Tools._
+    val attackerMargin = attacker.weaponSkill - DefaultDice.roll()
+    val defenderMargin = defender.weaponSkill - DefaultDice.roll()
+
+    if (attackerMargin > 0) {
+      if (defenderMargin < 0)
+        defender.temporaryModifiers.put(FeintPenalty, Modifier(DefendPenalty, attackerMargin, 2))
+      else if (attackerMargin > defenderMargin)
+        defender.temporaryModifiers.put(FeintPenalty, Modifier(DefendPenalty, attackerMargin - defenderMargin, 2))
+    }
+
   }
 }
 
 
 // for dual-weapon attack and rapid-strike, see the "chooseAttacks" method in AI
+
+// TODO: add FP based combat options

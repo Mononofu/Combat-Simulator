@@ -72,6 +72,7 @@ class CombatSimulator extends Actor {
 
       // right now, there are only two fighters and they can only attack each
       // other, so no targeting here
+      // TODO: take reach into account
       chosenAttacks.foreach(_.attack(attacker, defender))
 
       // tell the player that the his turn just ended, so effects like shock

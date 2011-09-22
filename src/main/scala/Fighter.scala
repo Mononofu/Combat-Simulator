@@ -20,10 +20,14 @@ sealed trait ModifierType
 // since shock penalties don't stack
 case object ShockPenalties extends ModifierType
 
+case object FeintPenalty extends ModifierType
+
 
 sealed trait ModifierTarget
 
 case object HitPenalty extends ModifierTarget
+
+case object DefendPenalty extends ModifierTarget
 
 
 // our modifier has three parts:
@@ -55,10 +59,11 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     Cutting.calcDamage(Damage(dmg, 1.))
   }
 
-  def parry(mod: Int = 0) = DefaultDice.check(parryScore + mod)
+  def parry(mod: Int = 0) = DefaultDice.check(parryScore + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
 
-  def dodge(mod: Int = 0) = DefaultDice.check(dodgeScore + mod)
+  def dodge(mod: Int = 0) = DefaultDice.check(dodgeScore + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
 
+  // TODO: add option for retreat
   def defend(mod: Int = 0) = {
     if (parryScore >= dodgeScore)
       parry(mod)
