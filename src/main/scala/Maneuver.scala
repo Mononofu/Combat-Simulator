@@ -8,7 +8,7 @@ package CombatSim.Maneuver
  * To change this template use File | Settings | File Templates.
  */
 
-import CombatSim.Fighter.Fighter
+import CombatSim.Fighter._
 import CombatSim.Attack.AttackModifiers
 import CombatSim.Tools.ResultType._
 
@@ -41,7 +41,7 @@ abstract class AllOutDefense extends Maneuver {
   override def attack(attacker: Fighter) = List()
 }
 
-class AllOutDefenseIncreased extends Maneuver {
+class AllOutDefenseIncreased extends AllOutDefense {
   override def defend(attacker: Fighter, defender: Fighter, mod: Int = 0) = defender.defend(+2 + mod)
 }
 
@@ -63,3 +63,15 @@ class AllOutDefenseDouble extends AllOutDefense {
   }
 }
 
+class Evaluate extends Maneuver {
+  override def attack(attacker: Fighter) = {
+    // do we already have some evaluate bonus?
+    val curMod = attacker.temporaryModifiers.getOrElse(EvaluateModifier, Modifier(HitPenalty, 0, 2))
+
+    // max bonus can be +3, so limit it, but refresh the duration counter
+    attacker.temporaryModifiers.put(EvaluateModifier, Modifier(HitPenalty, math.min(curMod.value+1, 3), 2))
+
+    // can't attack while evaluating
+    List()
+  }
+}

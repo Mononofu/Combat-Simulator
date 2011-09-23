@@ -22,6 +22,9 @@ case object ShockPenalties extends ModifierType
 
 case object FeintPenalty extends ModifierType
 
+case object EvaluateModifier extends ModifierType
+
+// TODO: find out difference between enumeration and case objects
 
 sealed trait ModifierTarget
 

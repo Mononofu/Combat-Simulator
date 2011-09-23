@@ -62,6 +62,7 @@ class CombatSimulator extends Actor {
       // for now, fighters don't do anything else than attack
       // but they can use different maneuvers
       // TODO: implement multiple maneuvers per turn
+      // TODO: tell attacker about current state of the combat
       attacker.chooseManeuver()
 
       // find out which attacks are provided by the maneuvers
