@@ -56,9 +56,9 @@ class Feint(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation = new
 
     if (attackerMargin > 0) {
       if (defenderMargin < 0)
-        defender.temporaryModifiers.put(FeintPenalty, Modifier(DefendPenalty, attackerMargin, 2))
+        defender.temporaryModifiers.put(FeintPenalty, List(Modifier(Parry, - attackerMargin, 2), Modifier(Dodge, -attackerMargin, 2)))
       else if (attackerMargin > defenderMargin)
-        defender.temporaryModifiers.put(FeintPenalty, Modifier(DefendPenalty, attackerMargin - defenderMargin, 2))
+        defender.temporaryModifiers.put(FeintPenalty, List(Modifier(Parry, - (attackerMargin - defenderMargin), 2), Modifier(Dodge, - (attackerMargin - defenderMargin), 2)))
     }
 
   }

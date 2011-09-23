@@ -49,3 +49,21 @@ case class CharacterSheet(name: String, customStats: (stat, Int)*) {
 
   def apply(s: stat) = stats(s)
 }
+
+sealed trait ModifierType
+
+// we need this to determine the source of the modifiers
+// since shock penalties don't stack
+case object ShockPenalties extends ModifierType
+
+case object FeintPenalty extends ModifierType
+
+case object EvaluateModifier extends ModifierType
+
+
+// our modifier has three parts:
+// 1) the target, ie what value is affected, eg DX or hit penalties
+// 2) the actual value of the modifier
+// 3) how many turns it should last, counter is always decremented at the end
+//    of each turn. if it reaches 0, the modifier is discarded.
+case class Modifier(target: stat, var value: Int, var duration: Int)

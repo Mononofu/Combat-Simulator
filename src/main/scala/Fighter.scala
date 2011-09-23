@@ -12,33 +12,8 @@ import CombatSim.Tools._
 import CombatSim.Maneuver._
 import CombatSim.Attack._
 import CombatSim.DamageType._
-
-sealed trait ModifierType
-
-// we need this to determine the source of the modifiers
-// since shock penalties don't stack
-case object ShockPenalties extends ModifierType
-
-case object FeintPenalty extends ModifierType
-
-case object EvaluateModifier extends ModifierType
-
-
-sealed trait ModifierTarget
-
-case object HitPenalty extends ModifierTarget
-
-case object DefendPenalty extends ModifierTarget
-
-
-// our modifier has three parts:
-// 1) the target, ie what value is affected, eg DX or hit penalties
-// 2) the actual value of the modifier
-// 3) how many turns it should last, counter is always decremented at the end
-//    of each turn. if it reaches 0, the modifier is discarded. 
-case class Modifier(target: ModifierTarget, var value: Int, var duration: Int)
-
 import CombatSim.CharacterSheet._
+
 
 case class Fighter(charsheet: CharacterSheet) {
   var dead           = false
@@ -46,9 +21,9 @@ case class Fighter(charsheet: CharacterSheet) {
   var maneuver       = new Attack
   val DR = 0
   val AI = new CombatSim.AI.AI
-  var temporaryModifiers = new collection.mutable.HashMap[ModifierType, Modifier]()
+  var temporaryModifiers = new collection.mutable.HashMap[ModifierType, List[Modifier]]()
 
-  def attack(mod: Int = 0) = DefaultDice.check(charsheet(WeaponSkill) - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
+  def attack(mod: Int = 0) = DefaultDice.check(charsheet(WeaponSkill) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
 
   def chooseManeuver(opponent: Fighter) = AI.chooseManeuver(this, opponent)
 
@@ -61,9 +36,9 @@ case class Fighter(charsheet: CharacterSheet) {
     Cutting.calcDamage(Damage(dmg, 1.))
   }
 
-  def parry(mod: Int = 0) = DefaultDice.check(charsheet(Parry) + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
+  def parry(mod: Int = 0) = DefaultDice.check(charsheet(Parry) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
 
-  def dodge(mod: Int = 0) = DefaultDice.check(charsheet(Dodge) + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
+  def dodge(mod: Int = 0) = DefaultDice.check(charsheet(Dodge) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
 
   // TODO: add option for retreat
   def defend(mod: Int = 0) = {
@@ -82,10 +57,10 @@ case class Fighter(charsheet: CharacterSheet) {
 
   def endTurn() {
     // decrease duration of all modifiers by one turn
-    temporaryModifiers.foreach(_._2.duration -= 1)
+    temporaryModifiers.foreach(_._2.foreach(_.duration -= 1))
     
     // remove those which no longer apply
-    temporaryModifiers = temporaryModifiers.filter(_._2.duration > 0)
+    temporaryModifiers = temporaryModifiers.filter(_._2.forall(_.duration > 0))
   }
 
 
@@ -117,8 +92,8 @@ case class Fighter(charsheet: CharacterSheet) {
         shockPenalties = math.max(math.min(injury, 4), shockPenalties)
       }
       
-      temporaryModifiers.getOrElseUpdate(ShockPenalties, Modifier(HitPenalty, shockPenalties, 1)) match {
-        case mod => if (mod.value < shockPenalties) temporaryModifiers.update(ShockPenalties, Modifier(HitPenalty, shockPenalties, 1))
+      temporaryModifiers.getOrElseUpdate(ShockPenalties, List(Modifier(WeaponSkill, - shockPenalties, 1))) match {
+        case mod => if (mod.head.value < shockPenalties) temporaryModifiers.update(ShockPenalties, List(Modifier(WeaponSkill, - shockPenalties, 1)))
       }
 
     }
