@@ -29,11 +29,6 @@ class CombatSimulator extends Actor {
       self reply CombatResult( (fighters.map(_.charsheet.name).toList, totalDeaths))
   }
 
-  def log(str: String = "") {
-    // centralized output so it can easily be disabled, mostly for debugging
-    //println(str)
-  }
-
   def fight(unsortedFighters: Array[Fighter]) = {
     // sort players in order of basic speed
     val fighters = unsortedFighters.sortWith((a, b) => a.charsheet(BS) > b.charsheet(BS))
@@ -88,17 +83,6 @@ class CombatSimulator extends Actor {
 
       // increment counter to next fighter
       i = (i + 1) % numF
-    }
-
-    // at the end of combat, display HP and alive status for each fighter
-    // will only be displayed if println is uncommented in the logging function
-    for (fighter <- fighters) {
-      if (!fighter.alive) {
-        log("%s: *dead*".format(fighter.charsheet.name))
-      }
-      else {
-        log("%s: %d HP".format(fighter.charsheet.name, fighter.curHP))
-      }
     }
 
     // return an array of alive status for the fighters
