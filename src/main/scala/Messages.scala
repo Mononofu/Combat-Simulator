@@ -15,4 +15,4 @@ case object Simulate extends SimMessage
 
 case class SimulateCombat(fighters: Array[Fighter], nrOfSimulations: Int) extends SimMessage
 
-case class CombatResult(result: List[Double]) extends SimMessage
+case class CombatResult(result: (List[String], List[Int])) extends SimMessage

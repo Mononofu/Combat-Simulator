@@ -8,10 +8,11 @@ package CombatSim.AI
  * To change this template use File | Settings | File Templates.
  */
 
+import CombatSim.Fighter.Fighter
 
 class AI {
   // select one of the maneuvers from CombatSim.Maneuver
-  def chooseManeuver() = new CombatSim.Maneuver.Attack
+  def chooseManeuver(self: Fighter, opponent: Fighter) = new CombatSim.Maneuver.Attack
 
   // input is a list of available attacks this turn, each with the relevant mods
   // return a list of the chosen attacks from CombatSim.Attack

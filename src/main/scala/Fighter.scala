@@ -9,7 +9,6 @@ package CombatSim.Fighter
  */
 
 import CombatSim.Tools._
-import ResultType._
 import CombatSim.Maneuver._
 import CombatSim.Attack._
 import CombatSim.DamageType._
@@ -24,7 +23,6 @@ case object FeintPenalty extends ModifierType
 
 case object EvaluateModifier extends ModifierType
 
-// TODO: find out difference between enumeration and case objects
 
 sealed trait ModifierTarget
 
@@ -40,35 +38,36 @@ case object DefendPenalty extends ModifierTarget
 //    of each turn. if it reaches 0, the modifier is discarded. 
 case class Modifier(target: ModifierTarget, var value: Int, var duration: Int)
 
-case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore: Int, BS: Double, name: String) {
-  val parryScore     = 3 + weaponSkill / 2
+import CombatSim.CharacterSheet._
+
+case class Fighter(charsheet: CharacterSheet) {
   var dead           = false
-  var curHP          = HP
+  var curHP          = charsheet(HP)
   var maneuver       = new Attack
   val DR = 0
   val AI = new CombatSim.AI.AI
   var temporaryModifiers = new collection.mutable.HashMap[ModifierType, Modifier]()
 
-  def attack(mod: Int = 0) = DefaultDice.check(weaponSkill - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
+  def attack(mod: Int = 0) = DefaultDice.check(charsheet(WeaponSkill) - (temporaryModifiers.filter(_._2.target == HitPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)) + mod)
 
-  def chooseManeuver() = AI.chooseManeuver()
+  def chooseManeuver(opponent: Fighter) = AI.chooseManeuver(this, opponent)
 
   def chooseAttacks(availableAttacks: List[AttackModifiers]) = AI.chooseAttacks(availableAttacks)
 
   def doDamage(mod: Int = 0) = {
-    val dmg = damage.roll() + mod
+    val dmg = charsheet.swingDamage.roll() + mod
 
     // this returns a case class: Damage(actual damage, multiplier for damage type / hit location)
     Cutting.calcDamage(Damage(dmg, 1.))
   }
 
-  def parry(mod: Int = 0) = DefaultDice.check(parryScore + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
+  def parry(mod: Int = 0) = DefaultDice.check(charsheet(Parry) + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
 
-  def dodge(mod: Int = 0) = DefaultDice.check(dodgeScore + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
+  def dodge(mod: Int = 0) = DefaultDice.check(charsheet(Dodge) + mod + (temporaryModifiers.filter(_._2.target == DefendPenalty).foldLeft(0)((sum, keyVal) => sum + keyVal._2.value)))
 
   // TODO: add option for retreat
   def defend(mod: Int = 0) = {
-    if (parryScore >= dodgeScore)
+    if (charsheet(Parry) >= charsheet(Dodge))
       parry(mod)
     else
       dodge(mod)
@@ -77,7 +76,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   def startTurn() {
     if (curHP < 0) {
       // need to make HT check every turn now
-      HTCheck(- (curHP.abs / HP))
+      HTCheck(- (curHP.abs / charsheet(HP)))
     }
   }
 
@@ -90,7 +89,7 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
   }
 
 
-  def HTCheck(mod: Int = 0) = DefaultDice.check(HT) match {
+  def HTCheck(mod: Int = 0) = DefaultDice.check(charsheet(HT)) match {
           case Failure | CriticalFailure => dead = true
           case _ =>
         }
@@ -100,19 +99,19 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
       // TODO: take hitlocation specific DR into account
       val injury = math.max((damage.baseDamage - DR) * damage.multiplier, 1).toInt
       
-      if (injury > HP / 2) HTCheck()
+      if (injury > charsheet(HP) / 2) HTCheck()
 
       // crossing HP treshold because of damage?
       // TODO: do something about crossing multiple thresholds at once
-      if ((curHP - injury) < 0 && curHP / HP != (curHP - injury) / HP) HTCheck()
+      if ((curHP - injury) < 0 && curHP / charsheet(HP) != (curHP - injury) / charsheet(HP)) HTCheck()
 
       //actually apply the damage to the HP
       curHP -= injury
 
 	  var shockPenalties = 0
       // only affect DX- and IQ-based skills, but not defenses
-      if (HP >= 20) {
-        shockPenalties = math.max(math.min(injury / (HP / 10), 4), shockPenalties)
+      if (charsheet(HP) >= 20) {
+        shockPenalties = math.max(math.min(injury / (charsheet(HP) / 10), 4), shockPenalties)
       }
       else {
         shockPenalties = math.max(math.min(injury, 4), shockPenalties)
@@ -125,12 +124,10 @@ case class Fighter(weaponSkill: Int, damage: Dice, HP: Int, HT: Int, dodgeScore:
     }
   }
 
-  def alive = {
-    !dead
-  }
+  def alive = !dead
 
   def reset() {
-    curHP = HP
+    curHP = charsheet(HP)
     dead = false
     temporaryModifiers.clear()
   }

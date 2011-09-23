@@ -1,6 +1,7 @@
 package CombatSim.CombatSimulator
 
 import CombatSim.Fighter.Fighter
+import CombatSim.CharacterSheet._
 import CombatSim.Messages._
 import akka.actor.Actor
 
@@ -22,10 +23,10 @@ class CombatSimulator extends Actor {
 
       // now let's tally up all those deaths
       // TODO: generalize this to n fighters, and not just 2
-      val totalDeaths = battles.foldLeft(List(0, 0))((total, status) => List(total(0) + (if (status(0)) 0 else 1), total(1) + (if (status(1)) 0 else 1)))
+      val totalDeaths = battles.foldLeft(List(0, 0))((total, status) => total.zip(status).map((t => t._1 + (if(t._2) 1 else 0)) ))
 
       // send the normalized result back to our work master
-      self reply CombatResult(totalDeaths.map(_ * 1. / nrOfSimulations))
+      self reply CombatResult( (fighters.map(_.charsheet.name).toList, totalDeaths))
   }
 
   def log(str: String = "") {
@@ -35,7 +36,7 @@ class CombatSimulator extends Actor {
 
   def fight(unsortedFighters: Array[Fighter]) = {
     // sort players in order of basic speed
-    val fighters = unsortedFighters.sortWith((a, b) => a.BS > b.BS)
+    val fighters = unsortedFighters.sortWith((a, b) => a.charsheet(BS) > b.charsheet(BS))
 
     // reset their HP and alive status
     fighters.foreach(_.reset())
@@ -62,8 +63,8 @@ class CombatSimulator extends Actor {
       // for now, fighters don't do anything else than attack
       // but they can use different maneuvers
       // TODO: implement multiple maneuvers per turn
-      // TODO: tell attacker about current state of the combat
-      attacker.chooseManeuver()
+      // give attacker information about his opponent
+      attacker.chooseManeuver(defender)
 
       // find out which attacks are provided by the maneuvers
       val availableAttacks = attacker.maneuver.attack(attacker)
@@ -88,14 +89,14 @@ class CombatSimulator extends Actor {
     // will only be displayed if println is uncommented in the logging function
     for (fighter <- fighters) {
       if (!fighter.alive) {
-        log("%s: *dead*".format(fighter.name))
+        log("%s: *dead*".format(fighter.charsheet.name))
       }
       else {
-        log("%s: %d HP".format(fighter.name, fighter.curHP))
+        log("%s: %d HP".format(fighter.charsheet.name, fighter.curHP))
       }
     }
 
     // return an array of alive status for the fighters
-    fighters.map(_.alive)
+    fighters.map(f => f.dead).toList
   }
 }

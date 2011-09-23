@@ -18,14 +18,15 @@ import CombatSim.Fighter.Fighter
 import CombatSim.Tools._
 import CombatSim.Messages._
 import CombatSim.CombatSimulator.CombatSimulator
+import CombatSim.CharacterSheet.CharacterSheet
 
 class WorkMaster(
-  nrOfWorkers: Int, nrOfJobs: Int, nrOfSimulations: Int, latch: CountDownLatch)
+  nrOfWorkers: Int, nrOfJobs: Int, nrOfSimulations: Int, latch: CountDownLatch, fighters: CharacterSheet*)
   extends Actor {
 
   var nrOfResults: Int  = _
   var start      : Long = _
-  var results = List[List[Double]]()
+  val results           = collection.mutable.HashMap[List[String], List[Int]]()
 
 
   // akka code from online documentation
@@ -38,13 +39,14 @@ class WorkMaster(
   // message handler
   def receive = {
     case Simulate =>
+      // match our fighters in all possible combinations
+      // each combination will be run nrOfSimulation times
+      val matches = fighters.combinations(2)
+
       // schedule work
-      //for (start <- 0 until nrOfMessages) router ! Work(start, nrOfElements)
-      for (i <- 0 until nrOfJobs) router !
-                                     SimulateCombat(Array(
-                                                           Fighter(20, Dice(1, 3), 12, 15, 9, 6., "me"),
-                                                           Fighter(13, Dice(2, 1), 18, 11, 8, 5.75, "you")),
-                                                     nrOfSimulations / nrOfJobs)
+      for (combo <- matches)
+        for (i <- 0 until nrOfJobs)
+          router ! SimulateCombat(combo.map(Fighter(_)).toArray, nrOfSimulations / nrOfJobs)
 
       // send a PoisonPill to all workers telling them to shut down themselves
       router ! Broadcast(PoisonPill)
@@ -54,7 +56,7 @@ class WorkMaster(
 
     case CombatResult(result) =>
       // handle result from the worker
-      results ::= result
+      results(result._1) = results.getOrElse(result._1, (for(i <- 0 until result._2.length) yield 0).toList).zip(result._2).map(a => a._1 + a._2)
       nrOfResults += 1
       if (nrOfResults == nrOfJobs) self.stop()
   }
@@ -65,7 +67,18 @@ class WorkMaster(
 
   override def postStop() {
     // tell the world that the calculation is complete
-    results.foldLeft(List(0., 0.))((total, res) => List(total(0) + res(0), total(1) + res(1))).map(_ / nrOfJobs).foreach( r => println("%.2f %% deaths".format(r * 100.)) )
+    for( (fighters, result) <- results) {
+      print("Fighters:")
+      fighters.foreach(name => print("\t\t" + name))
+      println()
+      print("Deaths:\t")
+      result.foreach(r => print("\t\t%d".format(r)))
+      println("")
+      print("\t\t")
+      result.foreach(r => print("\t\t%.2f %%".format(r * 100. / nrOfSimulations)))
+    }
+
+    //results.foldLeft(List(0., 0.))((total, res) => List(total(0) + res(0)._2, total(1) + res(1)._2)).map(_ / nrOfJobs).foreach(r => println("%.2f %% deaths".format(r * 100.)))
     println(
              "\n\tCalculation time: \t%s millis"
              .format(System.currentTimeMillis - start))

@@ -15,7 +15,7 @@ case class AttackModifiers(hitMod: Int = 0, dmgMod: Int = 0)
 
 class BasicAttack(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation = new Untargeted, defendMod: Int = 0) {
   def attack(attacker: Fighter, defender: Fighter) = {
-    import CombatSim.Tools.ResultType._
+    import CombatSim.Tools._
     attacker.attack(mods.hitMod) match {
       case CriticalSuccess =>
         // no defense possible
@@ -33,7 +33,7 @@ class BasicAttack(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation
       case CriticalFailure =>
         // TODO: put critical miss table here
 
-      case _ =>
+      case Failure =>
         // miss, nothing happens
     }
   }
@@ -50,8 +50,9 @@ class Feint(mods: AttackModifiers = AttackModifiers(), hitloc: HitLocation = new
   def attack(attacker: Fighter, defender: Fighter) = {
 
     import CombatSim.Tools._
-    val attackerMargin = attacker.weaponSkill - DefaultDice.roll()
-    val defenderMargin = defender.weaponSkill - DefaultDice.roll()
+    import CombatSim.CharacterSheet._
+    val attackerMargin = attacker.charsheet(WeaponSkill) - DefaultDice.roll()
+    val defenderMargin = defender.charsheet(WeaponSkill) - DefaultDice.roll()
 
     if (attackerMargin > 0) {
       if (defenderMargin < 0)

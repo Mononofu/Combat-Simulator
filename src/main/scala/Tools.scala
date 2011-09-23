@@ -8,13 +8,16 @@ package CombatSim.Tools
  * To change this template use File | Settings | File Templates.
  */
 
-object ResultType extends Enumeration {
-  type ResultType = Value
-  val CriticalSuccess = Value("Critical Success")
-  val Success         = Value("Success")
-  val Failure         = Value("Failure")
-  val CriticalFailure = Value("Critical Failure")
-}
+sealed trait ResultType
+
+case object CriticalSuccess extends ResultType
+
+case object Success extends ResultType
+
+case object Failure extends ResultType
+
+case object CriticalFailure extends ResultType
+
 
 case class Dice(numDice: Int = 3, mod: Int = 0) {
   def roll() = {
@@ -22,7 +25,6 @@ case class Dice(numDice: Int = 3, mod: Int = 0) {
   }
 
   def resultType(roll: Int, target: Int) = {
-    import ResultType._
     roll match {
       case 3 | 4 => CriticalSuccess
       case 18 => CriticalFailure
