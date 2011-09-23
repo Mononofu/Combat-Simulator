@@ -56,26 +56,31 @@ class CombatSimulator extends Actor {
 
       val attacker = fighters(i)
       val defender = fighters((i + 1) % numF)
+
+
       // tell the fighter that his turn just began, so certain events can take place
       // like HT rolls for <0 HP
-      attacker.startTurn()
+      // only let him act if he still can
+      if (attacker.startTurn())
+      {
+        // for now, fighters don't do anything else than attack
+        // but they can use different maneuvers
+        // TODO: implement multiple maneuvers per turn
+        // give attacker information about his opponent
+        attacker.chooseManeuver(defender)
 
-      // for now, fighters don't do anything else than attack
-      // but they can use different maneuvers
-      // TODO: implement multiple maneuvers per turn
-      // give attacker information about his opponent
-      attacker.chooseManeuver(defender)
+        // find out which attacks are provided by the maneuvers
+        val availableAttacks = attacker.maneuver.attack(attacker)
 
-      // find out which attacks are provided by the maneuvers
-      val availableAttacks = attacker.maneuver.attack(attacker)
+        // tell the fighter how many and which attacks he has
+        val chosenAttacks = attacker.chooseAttacks(availableAttacks)
 
-      // tell the fighter how many and which attacks he has
-      val chosenAttacks = attacker.chooseAttacks(availableAttacks)
+        // right now, there are only two fighters and they can only attack each
+        // other, so no targeting here
+        // TODO: take reach into account
+        chosenAttacks.foreach(_.attack(attacker, defender))
 
-      // right now, there are only two fighters and they can only attack each
-      // other, so no targeting here
-      // TODO: take reach into account
-      chosenAttacks.foreach(_.attack(attacker, defender))
+      }
 
       // tell the player that the his turn just ended, so effects like shock
       // penalties can be removed
