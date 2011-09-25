@@ -1,6 +1,7 @@
 package CombatSim.Messages
 
 import CombatSim.Fighter.Fighter
+import CombatSim.AI.AI
 /**
  * Created by IntelliJ IDEA.
  * User: mononofu
@@ -13,6 +14,6 @@ sealed trait SimMessage
 
 case object Simulate extends SimMessage
 
-case class SimulateCombat(fighters: Array[Fighter], nrOfSimulations: Int) extends SimMessage
+case class SimulateCombat(fighters: Array[Fighter], AIs: Array[AI], nrOfSimulations: Int) extends SimMessage
 
-case class CombatResult(result: (List[String], List[Int])) extends SimMessage
+case class CombatResult(fighterStats: Map[String, Int], AIStats: Map[Int, Int]) extends SimMessage

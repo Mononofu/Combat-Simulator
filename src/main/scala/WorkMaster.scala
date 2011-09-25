@@ -19,6 +19,7 @@ import CombatSim.Tools._
 import CombatSim.Messages._
 import CombatSim.CombatSimulator.CombatSimulator
 import CombatSim.CharacterSheet.CharacterSheet
+import CombatSim.AI.AI
 
 class WorkMaster(
   nrOfWorkers: Int, nrOfJobs: Int, nrOfSimulations: Int, latch: CountDownLatch, fighters: CharacterSheet*)
@@ -26,7 +27,8 @@ class WorkMaster(
 
   var nrOfResults: Int  = _
   var start      : Long = _
-  val results           = collection.mutable.HashMap[List[String], List[Int]]()
+  val fighterStats = new collection.mutable.HashMap[String, Int]()  { override def default(key: String) = 0 }
+  val AIStats = new collection.mutable.HashMap[Int, Int]() { override def default(key: Int) = 0 }
 
 
   // akka code from online documentation
@@ -39,6 +41,10 @@ class WorkMaster(
   // message handler
   def receive = {
     case Simulate =>
+      // create AIs
+      val nrOfAIs = 100
+      val AIs = for(i <- 0 until nrOfAIs) yield new AI(i)
+
       // match our fighters in all possible combinations
       // each combination will be run nrOfSimulation times
       val matches = fighters.combinations(2)
@@ -46,7 +52,7 @@ class WorkMaster(
       // schedule work
       for (combo <- matches)
         for (i <- 0 until nrOfJobs)
-          router ! SimulateCombat(combo.map(Fighter(_)).toArray, nrOfSimulations / nrOfJobs)
+          router ! SimulateCombat(combo.map(Fighter(_)).toArray, AIs.toArray, nrOfSimulations / nrOfJobs)
 
       // send a PoisonPill to all workers telling them to shut down themselves
       router ! Broadcast(PoisonPill)
@@ -54,9 +60,15 @@ class WorkMaster(
       // send a PoisonPill to the router, telling him to shut himself down
       router ! PoisonPill
 
-    case CombatResult(result) =>
-      // handle result from the worker
-      results(result._1) = results.getOrElse(result._1, (for(i <- 0 until result._2.length) yield 0).toList).zip(result._2).map(a => a._1 + a._2)
+    case CombatResult(fStats, aiStats) =>
+      for( (name, deaths) <- fStats) {
+        fighterStats(name) += deaths
+      }
+
+      for ( (id, deaths) <- aiStats ) {
+        AIStats(id) += deaths
+      }
+
       nrOfResults += 1
       if (nrOfResults == nrOfJobs) self.stop()
   }
@@ -67,21 +79,17 @@ class WorkMaster(
 
   override def postStop() {
     // tell the world that the calculation is complete
-    for( (fighters, result) <- results) {
-      print("Fighters:")
-      fighters.foreach(name => print("\t\t" + name))
-      println()
-      print("Deaths:\t")
-      result.foreach(r => print("\t\t%d".format(r)))
-      println("")
-      print("\t\t")
-      result.foreach(r => print("\t\t%.2f %%".format(r * 100. / nrOfSimulations)))
+    println("\tFighters:")
+    for( (name, deaths) <- fighterStats.toList.sortBy(_._2)) {
+      println("%10s \t %.2f%% \t %d".format(name, deaths * 100. / nrOfSimulations, deaths))
     }
 
-    //results.foldLeft(List(0., 0.))((total, res) => List(total(0) + res(0)._2, total(1) + res(1)._2)).map(_ / nrOfJobs).foreach(r => println("%.2f %% deaths".format(r * 100.)))
-    println(
-             "\n\tCalculation time: \t%s millis"
-             .format(System.currentTimeMillis - start))
+    println("\tAIs:")
+    for( (id, deaths) <- AIStats.toList.sortBy(_._2)) {
+      println("%d \t\t\t %.2f%% \t %d".format(id, deaths * 100. / nrOfSimulations, deaths))
+    }
+
+    println("\n\tCalculation time: \t%s millis".format(System.currentTimeMillis - start))
     latch.countDown()
   }
 }

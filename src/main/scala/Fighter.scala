@@ -18,9 +18,9 @@ import CombatSim.CharacterSheet._
 case class Fighter(charsheet: CharacterSheet) {
   var dead               = false
   var curHP              = charsheet(HP)
-  var maneuver           = new Attack
+  var maneuver: Maneuver = new Attack
   val DR                 = 0
-  val AI                 = new CombatSim.AI.AI
+  var AI = new CombatSim.AI.AI(-1)
   var temporaryModifiers = new collection.mutable.HashMap[ModifierType, List[Modifier]]()
 
   def attack(mod: Int = 0) = DefaultDice.check(charsheet(WeaponSkill) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
@@ -36,9 +36,9 @@ case class Fighter(charsheet: CharacterSheet) {
     Cutting.calcDamage(Damage(dmg, 1.))
   }
 
-  def parry(mod: Int = 0) = DefaultDice.check(charsheet(Parry) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
+  def parry(mod: Int = 0) = DefaultDice.check(charsheet(Parry) + mod + temporaryModifiers.values.flatten.filter(_.target == Parry).map(_.value).sum)
 
-  def dodge(mod: Int = 0) = DefaultDice.check(charsheet(Dodge) + mod + temporaryModifiers.values.flatten.filter(_.target == WeaponSkill).map(_.value).sum)
+  def dodge(mod: Int = 0) = DefaultDice.check(charsheet(Dodge) + mod + temporaryModifiers.values.flatten.filter(_.target == Dodge).map(_.value).sum)
 
   // TODO: add option for retreat
   def defend(mod: Int = 0) = {

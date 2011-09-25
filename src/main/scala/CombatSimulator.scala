@@ -1,32 +1,37 @@
 package CombatSim.CombatSimulator
 
 import CombatSim.Fighter.Fighter
+import CombatSim.AI.AI
 import CombatSim.CharacterSheet._
 import CombatSim.Messages._
 import akka.actor.Actor
 
-/**
- * Created by IntelliJ IDEA.
- * User: mononofu
- * Date: 9/19/11
- * Time: 7:33 PM
- * To change this template use File | Settings | File Templates.
- */
-
 class CombatSimulator extends Actor {
   def receive = {
-    case SimulateCombat(fighters, nrOfSimulations: Int) =>
+    case SimulateCombat(fighters, ais, nrOfSimulations) =>
+    val fighterStats = new collection.mutable.HashMap[String, Int]()  { override def default(key: String) = 0 }
+    val AIStats = new collection.mutable.HashMap[Int, Int]() { override def default(key: Int) = 0 }
       // simulate requested number of fights, each with results in an Array
       // where for each fighter there's either a 'true' entry for alive or
       // false for dead
-      val battles = for (i <- 0 until nrOfSimulations) yield fight(fighters)
+      for (i <- 0 until nrOfSimulations)
+      {
+        // give each fighter a random AI
+        for(f <- fighters)
+          f.AI = ais(util.Random.nextInt(100))
+
+        // let the fight
+        val result = fight(fighters)
 
       // now let's tally up all those deaths
-      // TODO: generalize this to n fighters, and not just 2
-      val totalDeaths = battles.foldLeft(List(0, 0))((total, status) => total.zip(status).map((t => t._1 + (if(t._2) 1 else 0)) ))
+        for(r <- result) {
+          fighterStats(r._1) += (if (r._3) 1 else 0)
+          AIStats(r._2) += (if (r._3) 1 else 0)
+        }
+      }
 
       // send the normalized result back to our work master
-      self reply CombatResult( (fighters.map(_.charsheet.name).toList, totalDeaths))
+      self reply CombatResult( fighterStats.toMap, AIStats.toMap )
   }
 
   def fight(unsortedFighters: Array[Fighter]) = {
@@ -85,7 +90,7 @@ class CombatSimulator extends Actor {
       i = (i + 1) % numF
     }
 
-    // return an array of alive status for the fighters
-    fighters.map(f => f.dead).toList
+    // return a list of (name, AI ID, alive status) for the fighters
+    fighters.map(f => (f.charsheet.name, f.AI.ID, f.dead)).toList
   }
 }
