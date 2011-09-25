@@ -13,10 +13,11 @@ object Interface extends App {
 
   val strongBoy = CharacterSheet("Hulk", ST -> 15, HT -> 12, HP -> 12, WeaponSkill -> 12, Parry -> 9)
   val quickOne = CharacterSheet("The Flash", ST -> 11, HT -> 11, BS -> 6, Dodge -> 10, WeaponSkill -> 15, Parry -> 12)
+  val loser = CharacterSheet("Loser", ST -> 9, HT -> 10, BS -> 4, Dodge -> 8, WeaponSkill -> 11, Parry -> 8)
 
 
   // create the master
-  val master = actorOf(new WorkMaster(8, 24, 12000, latch, strongBoy, quickOne)).start()
+  val master = actorOf(new WorkMaster(8, 24, 12000, latch, strongBoy, quickOne, loser)).start()
 
   // start the calculation
   master ! Simulate
